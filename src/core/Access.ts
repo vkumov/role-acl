@@ -1,6 +1,6 @@
-import { CommonUtil } from './../utils/';
-import { IAccessInfo } from '../core';
-import { ICondition } from './ICondition';
+import { CommonUtil } from "./../utils/";
+import { IAccessInfo } from "../core";
+import { ICondition } from "./ICondition";
 
 /**
  *  Represents the inner `Access` class that helps build an access information
@@ -12,241 +12,259 @@ import { ICondition } from './ICondition';
  *  @memberof AccessControl
  */
 class Access {
+  /**
+   *  Inner `IAccessInfo` object.
+   *  @protected
+   *  @type {IAccessInfo}
+   */
+  protected _: IAccessInfo = {};
 
-    /**
-     *  Inner `IAccessInfo` object.
-     *  @protected
-     *  @type {IAccessInfo}
-     */
-    protected _: IAccessInfo = {};
+  /**
+   *  Main grants object.
+   *  @protected
+   *  @type {Any}
+   */
+  protected _grants: any;
 
-    /**
-     *  Main grants object.
-     *  @protected
-     *  @type {Any}
-     */
-    protected _grants: any;
-
-    /**
-     *  Initializes a new instance of `Access`.
-     *  @private
-     *
-     *  @param {Any} grants
-     *         Main grants object.
-     *  @param {String|Array<String>|IAccessInfo} roleOrInfo
-     *         Either an `IAccessInfo` object, a single or an array of
-     *         roles. If an object is passed and attributes
-     *         properties are optional. CAUTION: if attributes is omitted,
-     *         and access is not denied, it will default to `["*"]` which means
-     *         "all attributes allowed".
-     *  @param {Boolean} denied
-     *         Specifies whether this `Access` is denied.
-     */
-    constructor(grants: any, roleOrInfo?: string | string[] | IAccessInfo) {
-        this._grants = grants;
-        if (typeof roleOrInfo === 'string' || Array.isArray(roleOrInfo)) {
-            this.role(roleOrInfo);
-        } else if (CommonUtil.type(roleOrInfo) === 'object') {
-            // if an IAccessInfo instance is passed and it has 'action' defined, we
-            // should directly commit it to grants.
-            this._ = roleOrInfo;
-        }
-
-        if (CommonUtil.isInfoFulfilled(this._)) {
-            CommonUtil.commitToGrants(grants, this._);
-        }
+  /**
+   *  Initializes a new instance of `Access`.
+   *  @private
+   *
+   *  @param {Any} grants
+   *         Main grants object.
+   *  @param {String|Array<String>|IAccessInfo} roleOrInfo
+   *         Either an `IAccessInfo` object, a single or an array of
+   *         roles. If an object is passed and attributes
+   *         properties are optional. CAUTION: if attributes is omitted,
+   *         and access is not denied, it will default to `["*"]` which means
+   *         "all attributes allowed".
+   *  @param {Boolean} denied
+   *         Specifies whether this `Access` is denied.
+   */
+  constructor(
+    grants: any,
+    roleOrInfo?: string | string[] | IAccessInfo,
+    denied?: boolean
+  ) {
+    this._grants = grants;
+    if (typeof roleOrInfo === "string" || Array.isArray(roleOrInfo)) {
+      this._.inverted = denied || false;
+      this.role(roleOrInfo);
+    } else if (CommonUtil.type(roleOrInfo) === "object") {
+      // if an IAccessInfo instance is passed and it has 'action' defined, we
+      // should directly commit it to grants.
+      this._ = roleOrInfo;
+      this._.inverted = denied || false;
     }
 
-    // -------------------------------
-    //  PUBLIC METHODS
-    // -------------------------------
-
-    /**
-     *  A chainer method that sets the role(s) for this `Access` instance.
-     *  @param {String|Array<String>} value
-     *         A single or array of roles.
-     *  @returns {Access}
-     *           Self instance of `Access`.
-     */
-    role(value: string | string[]): Access {
-        this._.role = value;
-        return this;
+    if (CommonUtil.isInfoFulfilled(this._)) {
+      CommonUtil.commitToGrants(grants, this._);
     }
+  }
 
-    /**
-     *  A chainer method that sets the resource for this `Access` instance.
-     *  @param {String|Array<String>} value
-     *         Target resource for this `Access` instance.
-     *  @returns {Access}
-     *           Self instance of `Access`.
-     */
-    resource(value: string | string[]): Access {
-        this._.resource = value;
-        return this;
-    }
+  // -------------------------------
+  //  PUBLIC METHODS
+  // -------------------------------
 
-    /**
-     * Commits the grant
-    *  @returns {Access}
-     *           Self instance of `Access`.
-     */
-    commit(): Access {
-        CommonUtil.commitToGrants(this._grants, this._);
-        return this
-    }
+  /**
+   *  A chainer method that sets the role(s) for this `Access` instance.
+   *  @param {String|Array<String>} value
+   *         A single or array of roles.
+   *  @returns {Access}
+   *           Self instance of `Access`.
+   */
+  role(value: string | string[]): Access {
+    this._.role = value;
+    return this;
+  }
 
-    /**
-     *  Sets the resource and commits the
-     *  current access instance to the underlying grant model.
-     *
-     *  @param {String|Array<String>} [resource]
-     *         Defines the target resource this access is granted or denied for.
-     *         This is only optional if the resource is previously defined.
-     *         If not defined and omitted, this will throw.
-     *  @param {String|Array<String>} [attributes]
-     *         Defines the resource attributes for which the access is granted
-     *         for. If granted before via `.grant()`, this will default
-     *         to `["*"]` (which means all attributes allowed.)
-     *
-     *  @throws {AccessControlError}
-     *          If the access instance to be committed has any invalid
-     *  data.
-     *
-     *  @returns {Access}
-     *           Self instance of `Access` so that you can chain and define
-     *           another access instance to be committed.
-     */
-    on(resource?: string | string[], attributes?: string | string[]): Access {
-        return this._prepareAndCommit(this._.action, resource, attributes);
-    }
+  /**
+   *  A chainer method that sets the resource for this `Access` instance.
+   *  @param {String|Array<String>} value
+   *         Target resource for this `Access` instance.
+   *  @returns {Access}
+   *           Self instance of `Access`.
+   */
+  resource(value: string | string[]): Access {
+    this._.resource = value;
+    return this;
+  }
 
-    /**
-     *  Sets the array of allowed attributes for this `Access` instance.
-     *  @param {String|Array<String>} value
-     *         Attributes to be set.
-     *  @returns {Access}
-     *           Self instance of `Access`.
-     */
-    attributes(value: string | string[]): Access {
-        this._.attributes = value;
-        return this;
-    }
+  /**
+   * Commits the grant
+   *  @returns {Access}
+   *           Self instance of `Access`.
+   */
+  commit(): Access {
+    CommonUtil.commitToGrants(this._grants, this._);
+    return this;
+  }
 
-    /**
-     *  Sets condition for this `Access` instance.
-     *  @param {ICondition | string | Function} value
-     *         Conditions to be set.
-     *  @returns {Access}
-     *           Self instance of `Access`.
-     */
-    condition(value: ICondition ) {
-        this._.condition = value;
-        return this;
-    }
+  /**
+   *  Sets the resource and commits the
+   *  current access instance to the underlying grant model.
+   *
+   *  @param {String|Array<String>} [resource]
+   *         Defines the target resource this access is granted or denied for.
+   *         This is only optional if the resource is previously defined.
+   *         If not defined and omitted, this will throw.
+   *  @param {String|Array<String>} [attributes]
+   *         Defines the resource attributes for which the access is granted
+   *         for. If granted before via `.grant()`, this will default
+   *         to `["*"]` (which means all attributes allowed.)
+   *
+   *  @throws {AccessControlError}
+   *          If the access instance to be committed has any invalid
+   *  data.
+   *
+   *  @returns {Access}
+   *           Self instance of `Access` so that you can chain and define
+   *           another access instance to be committed.
+   */
+  on(resource?: string | string[], attributes?: string | string[]): Access {
+    return this._prepareAndCommit(this._.action, resource, attributes);
+  }
 
-    /**
-     *  Sets the roles to be extended for this `Access` instance.
-     *  @param {String|Array<String>} roles
-     *         A single or array of roles.
-     *  @returns {Access}
-     *           Self instance of `Access`.
-     */
-    extend(roles: string | string[]): Access {
-        // When extending role we are not checking for conditions so we can use sync method
-        return this.extendSync(roles);
-    }
+  /**
+   *  Sets the array of allowed attributes for this `Access` instance.
+   *  @param {String|Array<String>} value
+   *         Attributes to be set.
+   *  @returns {Access}
+   *           Self instance of `Access`.
+   */
+  attributes(value: string | string[]): Access {
+    this._.attributes = value;
+    return this;
+  }
 
-    /**
-     *  Sets the roles to be extended for this `Access` instance.
-     *  @param {String|Array<String>} roles
-     *         A single or array of roles.
-     *  @returns {Access}
-     *           Self instance of `Access`.
-     */
-    extendSync(roles: string | string[]): Access {
-        CommonUtil.extendRoleSync(this._grants, this._.role, roles);
-        return this;
-    }
+  /**
+   *  Sets condition for this `Access` instance.
+   *  @param {ICondition | string | Function} value
+   *         Conditions to be set.
+   *  @returns {Access}
+   *           Self instance of `Access`.
+   */
+  condition(value: ICondition) {
+    this._.condition = value;
+    return this;
+  }
 
-    /**
-     *  Shorthand to switch to a new `Access` instance with a different role
-     *  within the method chain.
-     *
-     *  @param {String|Array<String>|IAccessInfo} [roleOrInfo]
-     *         Either a single or an array of roles or an
-     *         {@link ?api=ac#AccessControl~IAccessInfo|`IAccessInfo` object}.
-     *
-     *  @returns {Access}
-     *           A new `Access` instance.
-     *
-     *  @example
-     *  ac.grant('user').createOwn('video')
-     *    .grant('admin').updateAny('video');
-     */
-    grant(roleOrInfo?: string | string[] | IAccessInfo): Access {
-        return (new Access(this._grants, roleOrInfo)).attributes(['*']);
-    }
+  /**
+   *  Sets the roles to be extended for this `Access` instance.
+   *  @param {String|Array<String>} roles
+   *         A single or array of roles.
+   *  @returns {Access}
+   *           Self instance of `Access`.
+   */
+  extend(roles: string | string[]): Access {
+    // When extending role we are not checking for conditions so we can use sync method
+    return this.extendSync(roles);
+  }
 
-    /**
-     *  Sets the action.
-     *
-     *  @param {String} action
-     *         Defines the action this access is granted for.
-     *
-     *  @returns {Access}
-     *           Self instance of `Access` so that you can chain and define
-     *           another access instance to be committed.
-     */
-    execute(action: string): Access {
-        this._.action = action;
-        return this
-    }
+  /**
+   *  Sets the roles to be extended for this `Access` instance.
+   *  @param {String|Array<String>} roles
+   *         A single or array of roles.
+   *  @returns {Access}
+   *           Self instance of `Access`.
+   */
+  extendSync(roles: string | string[]): Access {
+    CommonUtil.extendRoleSync(this._grants, this._.role, roles);
+    return this;
+  }
 
-    /**
-     * Alias of `execute`
-     */
-    action(action: string): Access {
-        this._.action = action;
-        return this
-    }
+  /**
+   *  Shorthand to switch to a new `Access` instance with a different role
+   *  within the method chain.
+   *
+   *  @param {String|Array<String>|IAccessInfo} [roleOrInfo]
+   *         Either a single or an array of roles or an
+   *         {@link ?api=ac#AccessControl~IAccessInfo|`IAccessInfo` object}.
+   *
+   *  @returns {Access}
+   *           A new `Access` instance.
+   *
+   *  @example
+   *  ac.grant('user').createOwn('video')
+   *    .grant('admin').updateAny('video');
+   */
+  grant(roleOrInfo?: string | string[] | IAccessInfo): Access {
+    return new Access(this._grants, roleOrInfo).attributes(["*"]);
+  }
 
-    /**
-     *  Sets the condition for access.
-     *
-     *  @param {String} condition
-     *         Defines the action this access is granted for.
-     *
-     *  @returns {Access}
-     *           Self instance of `Access` so that you can chain and define
-     *           another access instance to be committed.
-     */
-    when(condition: ICondition): Access {
-        this._.condition = condition;
-        return this
-    }
+  /**
+   *  Sets the action.
+   *
+   *  @param {String} action
+   *         Defines the action this access is granted for.
+   *
+   *  @returns {Access}
+   *           Self instance of `Access` so that you can chain and define
+   *           another access instance to be committed.
+   */
+  execute(action: string): Access {
+    this._.action = action;
+    return this;
+  }
 
-    // -------------------------------
-    //  PRIVATE METHODS
-    // -------------------------------
+  /**
+   * Alias of `execute`
+   */
+  action(action: string): Access {
+    this._.action = action;
+    return this;
+  }
 
-    /**
-     *  @private
-     *  @param {String} action     [description]
-     *  @param {String|Array<String>} resource   [description]
-     *  @param {String|Array<String>} attributes [description]
-     *  @returns {Access}
-     *           Self instance of `Access`.
-     */
-    private _prepareAndCommit(action: string | string[], resource?: string | string[], attributes?: string | string[]): Access {
-        this._.action = action;
-        if (resource) this._.resource = resource;
-        if (attributes) this._.attributes = attributes;
-        CommonUtil.commitToGrants(this._grants, this._);
-        // important: reset attributes for chained methods
-        this._.attributes = undefined;
-        return this;
-    }
+  /**
+   *  Sets the condition for access.
+   *
+   *  @param {String} condition
+   *         Defines the action this access is granted for.
+   *
+   *  @returns {Access}
+   *           Self instance of `Access` so that you can chain and define
+   *           another access instance to be committed.
+   */
+  when(condition: ICondition): Access {
+    this._.condition = condition;
+    return this;
+  }
 
+  deny(): Access {
+    this._.inverted = true;
+    return this;
+  }
+
+  permit(): Access {
+    this._.inverted = false;
+    return this;
+  }
+
+  // -------------------------------
+  //  PRIVATE METHODS
+  // -------------------------------
+
+  /**
+   *  @private
+   *  @param {String} action     [description]
+   *  @param {String|Array<String>} resource   [description]
+   *  @param {String|Array<String>} attributes [description]
+   *  @returns {Access}
+   *           Self instance of `Access`.
+   */
+  private _prepareAndCommit(
+    action: string | string[],
+    resource?: string | string[],
+    attributes?: string | string[]
+  ): Access {
+    this._.action = action;
+    if (resource) this._.resource = resource;
+    if (attributes) this._.attributes = attributes;
+    CommonUtil.commitToGrants(this._grants, this._);
+    // important: reset attributes for chained methods
+    this._.attributes = undefined;
+    return this;
+  }
 }
 
 export { Access };
