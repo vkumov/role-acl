@@ -202,7 +202,7 @@ class Access {
    *           Self instance of `Access` so that you can chain and define
    *           another access instance to be committed.
    */
-  execute(action: string): Access {
+  execute(action: string | string[]): Access {
     this._.action = action;
     return this;
   }
