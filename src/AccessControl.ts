@@ -8,7 +8,7 @@ import {
   IQueryInfo,
   Permission,
   AccessControlError,
-  IFunctionCondition
+  IFunctionCondition,
 } from "./core";
 
 import { ConditionUtil } from "./conditions";
@@ -86,10 +86,13 @@ class AccessControl {
    *
    *  @param {Object|Array} grants - A list containing the access grant
    *      definitions. See the structure of this object in the examples.
-   * 
+   *
    *  @param {Object} customConditionFns - custom condition functions
    */
-  constructor(grants: any = {}, customConditionFns: IDictionary<IFunctionCondition> = {} ) {
+  constructor(
+    grants: any = {},
+    customConditionFns: IDictionary<IFunctionCondition> = {}
+  ) {
     ConditionUtil.resetCustomConditionFunctions();
     ConditionUtil.setCustomConditionFunctions(customConditionFns);
     this.setGrants(grants);
@@ -124,15 +127,15 @@ class AccessControl {
     if (type === "object") {
       this._grants = CommonUtil.normalizeGrantsObject(grantsObject);
     } else if (type === "array") {
-      grantsObject.filter((grant => !grant.extend || !grant.extend.length))
-      .forEach((item: any) =>
-        CommonUtil.commitToGrants(this._grants, item)
-      );
+      grantsObject
+        .filter((grant) => !grant.extend || !grant.extend.length)
+        .forEach((item: any) => CommonUtil.commitToGrants(this._grants, item));
 
-      grantsObject.filter((item => item.extend && item.extend.length))
-      .forEach((item: any) =>
-        CommonUtil.extendRole(this._grants, item.role, item.extend)
-      );
+      grantsObject
+        .filter((item) => item.extend && item.extend.length)
+        .forEach((item: any) =>
+          CommonUtil.extendRole(this._grants, item.role, item.extend)
+        );
     }
     return this;
   }
@@ -202,7 +205,7 @@ class AccessControl {
     this._each((role: string, roleItem: any) => {
       if (roleItem.$extend) {
         // Adjust scores and remove
-        rolesToRemove.forEach(role => {
+        rolesToRemove.forEach((role) => {
           if (roleItem.$extend[role]) {
             roleItem.score -= this._grants[role].score;
             delete roleItem.$extend[role];
@@ -443,16 +446,26 @@ class AccessControl {
   }
 
   /**
+   *  Deny action
+   */
+  deny(role: string | string[] | IAccessInfo): Access {
+    return new Access(this._grants, role, true);
+  }
+
+  /**
    * Converts grants object to JSON format
    */
   toJSON(): string {
     return CommonUtil.toExtendedJSON({
       grants: this._grants,
-      customConditionFunctions: ConditionUtil.getCustomConditionFunctions()
+      customConditionFunctions: ConditionUtil.getCustomConditionFunctions(),
     });
   }
 
-  registerConditionFunction(funtionName: string, fn: IFunctionCondition): AccessControl {
+  registerConditionFunction(
+    funtionName: string,
+    fn: IFunctionCondition
+  ): AccessControl {
     ConditionUtil.registerCustomConditionFunction(funtionName, fn);
     return this;
   }
