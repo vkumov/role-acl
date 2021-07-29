@@ -9,6 +9,7 @@ import {
   ICondition,
 } from "../core";
 import cloneDeep from "lodash.clonedeep";
+import { IGrants } from "../core/IGrants";
 
 export class CommonUtil {
   public static isStringOrArray(value: any): boolean {
@@ -184,8 +185,8 @@ export class CommonUtil {
     return arr;
   }
 
-  public static normalizeGrantsObject(grants: any): any {
-    const grantsCopy = this.clone(grants);
+  public static normalizeGrantsObject(grants: any): IGrants {
+    const grantsCopy = this.clone(grants) as IGrants;
     for (let role in grantsCopy) {
       if (!grantsCopy[role].grants) {
         continue;

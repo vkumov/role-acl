@@ -12,6 +12,7 @@ import {
 } from "./core";
 
 import { ConditionUtil } from "./conditions";
+import { IGrant, IGrants } from "./core/IGrants";
 
 /**
  *  @classdesc
@@ -79,7 +80,7 @@ class AccessControl {
   /**
    *  @private
    */
-  private _grants: any;
+  private _grants: IGrants;
 
   /**
    *  Initializes a new instance of `AccessControl` with the given grants.
@@ -468,6 +469,18 @@ class AccessControl {
   ): AccessControl {
     ConditionUtil.registerCustomConditionFunction(funtionName, fn);
     return this;
+  }
+
+  /**
+   * Allows to filter grants of a role
+   */
+  filter(
+    role: string,
+    predicate: (grant: IGrant, index: number, array: IGrant[]) => boolean
+  ): void {
+    if (!this._grants[role] || !Array.isArray(this._grants[role].grants))
+      return;
+    this._grants[role].grants = this._grants[role].grants.filter(predicate);
   }
 
   // -------------------------------
